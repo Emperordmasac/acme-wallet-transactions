@@ -1,23 +1,17 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { Transaction } from '@/types/api'
-import { Card, CardHeader, Drawer, Money } from '@/components/ui'
-import { TransactionRow } from '@/components/transactions'
-import { getTransactions } from '@/lib/api/endpoints'
-import { formatDateTime, TRANSACTION_STATUS_LABELS } from '@/lib/format'
+import { Button, Card, CardHeader, Drawer, StateMessage } from '@/components/ui'
+import { TransactionDetails, TransactionRow, useTransactions } from '@/components/transactions'
+import { formatDateTime } from '@/lib/format'
 import styles from './RecentTransactions.module.css'
+
+const QUERY = { limit: 5 }
 
 export function RecentTransactions() {
   const [selected, setSelected] = useState<Transaction | null>(null)
-  const [transactions, setTransactions] = useState<Transaction[]>()
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    getTransactions({ limit: 5 })
-      .then((res) => setTransactions(res.data))
-      .finally(() => setIsLoading(false))
-  }, [])
+  const { data, error, retry } = useTransactions(QUERY)
 
   return (
     <Card padding="none">
@@ -31,31 +25,36 @@ export function RecentTransactions() {
           }
         />
       </div>
-      {isLoading && <p className={styles.message}>Loading…</p>}
-      {!isLoading && !transactions?.length && <p className={styles.message}>No transactions yet.</p>}
-      {transactions?.map((tx) => (
-        <TransactionRow
-          key={tx.id}
-          transaction={tx}
-          meta={formatDateTime(tx.createdAt)}
-          onSelect={setSelected}
+      {error ? (
+        <StateMessage
+          icon="alert"
+          tone="danger"
+          title="We couldn’t load your transactions"
+          role="alert"
+          action={
+            <Button iconLeft="refresh" onClick={retry}>
+              Try again
+            </Button>
+          }
         />
-      ))}
+      ) : !data ? (
+        <p className={styles.message}>Loading…</p>
+      ) : data.length === 0 ? (
+        <p className={styles.message}>No transactions yet.</p>
+      ) : (
+        data.map((tx) => (
+          <TransactionRow
+            key={tx.id}
+            transaction={tx}
+            meta={formatDateTime(tx.createdAt)}
+            onSelect={setSelected}
+          />
+        ))
+      )}
 
       <Drawer open={selected !== null} title="Transaction details" onClose={() => setSelected(null)}>
         {selected && (
-          <dl className={styles.details}>
-            <dt>Reference</dt>
-            <dd>{selected.reference}</dd>
-            <dt>Amount</dt>
-            <dd>
-              <Money amount={selected.amount} currency={selected.currency} />
-            </dd>
-            <dt>Status</dt>
-            <dd>{TRANSACTION_STATUS_LABELS[selected.status]}</dd>
-            <dt>Date</dt>
-            <dd>{formatDateTime(selected.createdAt)}</dd>
-          </dl>
+          <TransactionDetails id={selected.id} initial={selected} onBack={() => setSelected(null)} />
         )}
       </Drawer>
     </Card>
