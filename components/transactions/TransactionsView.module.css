@@ -17,8 +17,6 @@
   color: var(--color-text-muted);
 }
 
-/* Filters */
-
 .filters {
   display: flex;
   align-items: flex-end;
@@ -40,8 +38,6 @@
 .clear {
   flex-shrink: 0;
 }
-
-/* List */
 
 .list {
   transition: opacity var(--duration-normal) var(--ease-out);
@@ -69,8 +65,6 @@
 .list section:not(:last-child) > :last-child {
   border-bottom: 1px solid var(--color-border);
 }
-
-/* Loading */
 
 .skeleton {
   display: block;

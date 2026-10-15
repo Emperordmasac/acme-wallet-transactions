@@ -1,9 +1,8 @@
 'use client'
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import type { TransactionStatus, TransactionType } from '@/types/api'
 import { Button, Input, Select } from '@/components/ui'
 import { TRANSACTION_STATUS_LABELS, TRANSACTION_TYPE_LABELS } from '@/lib/format'
-import type { TransactionsQuery } from '@/lib/transactions/query'
+import { isStatus, isType, type TransactionsQuery } from '@/lib/transactions/query'
 import styles from './TransactionsView.module.css'
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -74,14 +73,14 @@ export function TransactionFilters({ query, onSearch, onChange }: TransactionFil
         label="Type"
         options={TYPE_OPTIONS}
         value={query.type ?? ''}
-        onChange={(e) => onChange({ type: (e.target.value || undefined) as TransactionType | undefined })}
+        onChange={(e) => onChange({ type: isType(e.target.value) ? e.target.value : undefined })}
         fieldClassName={styles.type}
       />
       <Select
         label="Status"
         options={STATUS_OPTIONS}
         value={query.status ?? ''}
-        onChange={(e) => onChange({ status: (e.target.value || undefined) as TransactionStatus | undefined })}
+        onChange={(e) => onChange({ status: isStatus(e.target.value) ? e.target.value : undefined })}
         fieldClassName={styles.status}
       />
       {hasFilters && (

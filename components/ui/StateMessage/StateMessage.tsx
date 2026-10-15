@@ -12,7 +12,6 @@ interface StateMessageProps {
   role?: 'alert'
 }
 
-/** Centred icon, title, body and optional action for empty, error and not-found states. */
 export function StateMessage({ icon, title, children, action, tone = 'primary', role }: StateMessageProps) {
   return (
     <div className={styles.state} role={role}>

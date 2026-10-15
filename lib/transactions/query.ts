@@ -10,10 +10,10 @@ export interface TransactionsQuery {
   tx?: string
 }
 
-const isType = (value: string | null): value is TransactionType =>
+export const isType = (value: string | null): value is TransactionType =>
   value !== null && Object.hasOwn(TRANSACTION_TYPE_LABELS, value)
 
-const isStatus = (value: string | null): value is TransactionStatus =>
+export const isStatus = (value: string | null): value is TransactionStatus =>
   value !== null && Object.hasOwn(TRANSACTION_STATUS_LABELS, value)
 
 /** Read the page state from the URL, ignoring values the API wouldn't accept. */
