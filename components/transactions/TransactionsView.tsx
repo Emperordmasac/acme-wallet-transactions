@@ -1,10 +1,11 @@
 'use client'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect } from 'react'
-import { Button, Card, Pagination, StateMessage } from '@/components/ui'
+import { useCallback, useEffect, useRef } from 'react'
+import { Button, Card, Drawer, Pagination, StateMessage } from '@/components/ui'
 import { cx } from '@/lib/cx'
 import { formatTime, groupByDay } from '@/lib/format'
 import { parseQuery, toSearch, type TransactionsQuery } from '@/lib/transactions/query'
+import { TransactionDetails } from './TransactionDetails'
 import { TransactionFilters } from './TransactionFilters'
 import { TransactionRow } from './TransactionRow'
 import { useTransactions } from './useTransactions'
@@ -33,6 +34,20 @@ export function TransactionsView() {
     [router, pathname, searchParams]
   )
   const clearFilters = () => update({ q: '', type: undefined, status: undefined })
+
+  // Opening from a row pushes a history entry, so closing goes back to it. A drawer
+  // opened from a shared link has no entry of ours behind it, so closing replaces.
+  const pushedDetails = useRef(false)
+  const openDetails = (id: string) => {
+    pushedDetails.current = true
+    update({ tx: id })
+  }
+  const closeDetails = () => {
+    if (!query.tx) return
+    if (pushedDetails.current) router.back()
+    else router.replace(hrefFor({ tx: undefined }), { scroll: false })
+    pushedDetails.current = false
+  }
 
   const totalPages = meta?.totalPages ?? 1
   const outOfRange = !isLoading && page > totalPages
@@ -107,7 +122,12 @@ export function TransactionsView() {
                 <section key={group.label} aria-label={group.label}>
                   <h2 className={styles.day}>{group.label}</h2>
                   {group.transactions.map((tx) => (
-                    <TransactionRow key={tx.id} transaction={tx} meta={formatTime(tx.createdAt)} />
+                    <TransactionRow
+                      key={tx.id}
+                      transaction={tx}
+                      meta={formatTime(tx.createdAt)}
+                      onSelect={(selected) => openDetails(selected.id)}
+                    />
                   ))}
                 </section>
               ))}
@@ -124,6 +144,16 @@ export function TransactionsView() {
           )}
         </>
       )}
+
+      <Drawer open={Boolean(query.tx)} title="Transaction details" onClose={closeDetails}>
+        {query.tx && (
+          <TransactionDetails
+            id={query.tx}
+            initial={data?.find((tx) => tx.id === query.tx)}
+            onBack={closeDetails}
+          />
+        )}
+      </Drawer>
     </div>
   )
 }
