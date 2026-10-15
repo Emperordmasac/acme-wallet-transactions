@@ -1,5 +1,5 @@
 'use client'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useId, useRef } from 'react'
 import { Icon } from '../Icon'
 import styles from './Drawer.module.css'
 
@@ -12,20 +12,40 @@ export interface DrawerProps {
 }
 
 export function Drawer({ open, title, onClose, children, footer }: DrawerProps) {
-  if (!open) return null
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (open && !dialog.open) dialog.showModal()
+    if (!open && dialog.open) dialog.close()
+  }, [open])
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.panel}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>{title}</h2>
-          <span className={styles.close} onClick={onClose}>
-            <Icon name="close" size={20} />
-          </span>
-        </div>
-        <div className={styles.body}>{children}</div>
-        {footer && <div className={styles.footer}>{footer}</div>}
+    <dialog
+      ref={dialogRef}
+      className={styles.panel}
+      aria-labelledby={titleId}
+      // Escape fires `cancel`; let React state drive the close so the two never drift.
+      onCancel={(e) => {
+        e.preventDefault()
+        onClose()
+      }}
+      onClose={onClose}
+      // A click on the dialog element itself is a click on its ::backdrop.
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className={styles.header}>
+        <h2 id={titleId} className={styles.title}>
+          {title}
+        </h2>
+        <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+          <Icon name="close" size={20} />
+        </button>
       </div>
-    </div>
+      <div className={styles.body}>{children}</div>
+      {footer && <div className={styles.footer}>{footer}</div>}
+    </dialog>
   )
 }
