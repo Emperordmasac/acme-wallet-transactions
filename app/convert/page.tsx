@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import type { Conversion, Currency, Rate, User } from '@/types/api'
 import { CURRENCIES } from '@/types/api'
 import { Button, Card, Input, Money, Select } from '@/components/ui'
@@ -54,7 +54,8 @@ export default function ConvertPage() {
   const wallet = user?.wallets.find((w) => w.currency === from)
   const canSubmit = value > 0 && from !== to && Boolean(rate) && !submitting
 
-  const handleConvert = async () => {
+  const handleConvert = async (e: FormEvent) => {
+    e.preventDefault()
     if (!canSubmit) return
     setError('')
     setSubmitting(true)
@@ -74,79 +75,81 @@ export default function ConvertPage() {
       <h1 className={styles.title}>Convert currency</h1>
 
       <Card>
-        <div className={styles.row}>
+        <form onSubmit={handleConvert} noValidate>
+          <div className={styles.row}>
+            <Select
+              label="From"
+              options={CURRENCY_OPTIONS}
+              value={from}
+              onChange={(e) => setFrom(e.target.value as Currency)}
+              fieldClassName={styles.currency}
+            />
+            <Input
+              label="Amount"
+              type="number"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              hint={
+                wallet ? (
+                  <>
+                    Balance: <Money amount={wallet.balance} currency={from} />
+                  </>
+                ) : (
+                  `Balance: ${userFailed ? 'unavailable' : '…'}`
+                )
+              }
+              fieldClassName={styles.amount}
+            />
+          </div>
+
           <Select
-            label="From"
+            label="To"
             options={CURRENCY_OPTIONS}
-            value={from}
-            onChange={(e) => setFrom(e.target.value as Currency)}
-            fieldClassName={styles.currency}
+            value={to}
+            onChange={(e) => setTo(e.target.value as Currency)}
+            fieldClassName={styles.to}
           />
-          <Input
-            label="Amount"
-            type="number"
-            inputMode="decimal"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            hint={
-              wallet ? (
-                <>
-                  Balance: <Money amount={wallet.balance} currency={from} />
-                </>
-              ) : (
-                `Balance: ${userFailed ? 'unavailable' : '…'}`
-              )
-            }
-            fieldClassName={styles.amount}
-          />
-        </div>
 
-        <Select
-          label="To"
-          options={CURRENCY_OPTIONS}
-          value={to}
-          onChange={(e) => setTo(e.target.value as Currency)}
-          fieldClassName={styles.to}
-        />
+          <dl className={styles.summary}>
+            <div className={styles.summaryRow}>
+              <dt>Rate</dt>
+              <dd>
+                {rate ? (
+                  `1 ${from} = ${rate.rate} ${to}`
+                ) : failedRateKey === rateKey ? (
+                  <span role="alert" className={styles.rateError}>
+                    Couldn&apos;t load the rate.{' '}
+                    <Button variant="ghost" size="sm" onClick={() => setRateAttempt((n) => n + 1)}>
+                      Retry
+                    </Button>
+                  </span>
+                ) : (
+                  '…'
+                )}
+              </dd>
+            </div>
+            <div className={styles.summaryRow}>
+              <dt>Fee (1.5%)</dt>
+              <dd>
+                <Money amount={fee} currency={from} />
+              </dd>
+            </div>
+            <div className={styles.summaryTotal}>
+              <dt>You get</dt>
+              <dd>
+                <Money amount={youGet} currency={to} />
+              </dd>
+            </div>
+          </dl>
 
-        <dl className={styles.summary}>
-          <div className={styles.summaryRow}>
-            <dt>Rate</dt>
-            <dd>
-              {rate ? (
-                `1 ${from} = ${rate.rate} ${to}`
-              ) : failedRateKey === rateKey ? (
-                <span role="alert" className={styles.rateError}>
-                  Couldn&apos;t load the rate.{' '}
-                  <Button variant="ghost" size="sm" onClick={() => setRateAttempt((n) => n + 1)}>
-                    Retry
-                  </Button>
-                </span>
-              ) : (
-                '…'
-              )}
-            </dd>
-          </div>
-          <div className={styles.summaryRow}>
-            <dt>Fee (1.5%)</dt>
-            <dd>
-              <Money amount={fee} currency={from} />
-            </dd>
-          </div>
-          <div className={styles.summaryTotal}>
-            <dt>You get</dt>
-            <dd>
-              <Money amount={youGet} currency={to} />
-            </dd>
-          </div>
-        </dl>
+          {error && <p className={styles.error}>{error}</p>}
 
-        {error && <p className={styles.error}>{error}</p>}
-
-        <Button fullWidth onClick={handleConvert} disabled={!canSubmit}>
-          {submitting ? 'Converting…' : 'Convert'}
-        </Button>
+          <Button type="submit" fullWidth disabled={!canSubmit}>
+            {submitting ? 'Converting…' : 'Convert'}
+          </Button>
+        </form>
       </Card>
 
       {result && (

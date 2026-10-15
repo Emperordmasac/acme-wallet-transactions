@@ -25,6 +25,7 @@ describe('ConvertPage', () => {
     vi.mocked(convert).mockRejectedValue(new ApiError(422, 'INSUFFICIENT_FUNDS', 'Insufficient funds'))
     render(<ConvertPage />)
 
+    await screen.findByText('1 USD = 1530.25 NGN')
     await userEvent.type(screen.getByLabelText('Amount'), '50')
     await userEvent.click(screen.getByRole('button', { name: 'Convert' }))
 
@@ -60,5 +61,27 @@ describe('ConvertPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't load the rate.")
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
     expect(await screen.findByText('1 USD = 1530.25 NGN')).toBeInTheDocument()
+  })
+
+  it('submits with Enter from the amount field', async () => {
+    vi.mocked(convert).mockResolvedValue({
+      data: {
+        id: 'txn_c',
+        from: 'USD',
+        to: 'NGN',
+        amount: 5000,
+        fee: 75,
+        rate: 1530.25,
+        received: 7651250,
+        status: 'successful',
+      },
+    })
+    render(<ConvertPage />)
+    await screen.findByText('1 USD = 1530.25 NGN')
+
+    await userEvent.type(screen.getByLabelText('Amount'), '50{Enter}')
+
+    expect(convert).toHaveBeenCalledWith({ from: 'USD', to: 'NGN', amount: 5000 })
+    expect(await screen.findByText(/Conversion successful/)).toBeInTheDocument()
   })
 })
