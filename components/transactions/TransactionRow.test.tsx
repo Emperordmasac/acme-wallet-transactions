@@ -24,10 +24,4 @@ describe('TransactionRow', () => {
     expect(screen.getByText(narration)).toBeInTheDocument()
     expect(container.querySelector('img')).toBeNull()
   })
-
-  it('shows the fee in the transaction currency', () => {
-    render(<TransactionRow transaction={{ ...tx, currency: 'USD', fee: 30 }} />)
-
-    expect(screen.getByText(/Fee \$0\.30/)).toBeInTheDocument()
-  })
 })

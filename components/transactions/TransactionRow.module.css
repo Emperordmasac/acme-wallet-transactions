@@ -1,6 +1,7 @@
 .row {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto auto;
+  grid-template-columns: 40px minmax(0, 1fr) 112px 176px;
+  grid-template-areas: 'avatar main status end';
   align-items: center;
   gap: var(--space-4);
   width: 100%;
@@ -21,18 +22,12 @@
   background: var(--color-bg-subtle);
 }
 
-.icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+.avatar {
+  grid-area: avatar;
 }
 
 .main {
+  grid-area: main;
   min-width: 0;
 }
 
@@ -53,7 +48,13 @@
   white-space: nowrap;
 }
 
+.status {
+  grid-area: status;
+  justify-self: start;
+}
+
 .end {
+  grid-area: end;
   display: block;
   text-align: right;
 }
@@ -74,4 +75,28 @@
   font-size: var(--text-xs);
   color: var(--color-text-subtle);
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'avatar main end'
+      'avatar main status';
+    gap: 6px var(--space-3);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .status {
+    justify-self: end;
+  }
+
+  .meta {
+    display: none;
+  }
 }

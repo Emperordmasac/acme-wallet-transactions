@@ -1,50 +1,41 @@
+import type { ReactNode } from 'react'
 import type { Transaction, TransactionType } from '@/types/api'
-import { Icon, type IconName, Money } from '@/components/ui'
-import { formatDateTime, formatMoney, TRANSACTION_TYPE_LABELS } from '@/lib/format'
-import { StatusDot } from './StatusDot'
+import { Money } from '@/components/ui'
+import { TRANSACTION_TYPE_LABELS } from '@/lib/format'
+import { StatusBadge } from './StatusBadge'
+import { TransactionAvatar } from './TransactionAvatar'
 import styles from './TransactionRow.module.css'
-
-const TYPE_ICONS: Record<TransactionType, IconName> = {
-  deposit: 'arrow-down-left',
-  transfer_in: 'arrow-down-left',
-  withdrawal: 'arrow-up-right',
-  transfer_out: 'arrow-up-right',
-  conversion: 'swap',
-  card_payment: 'card',
-  bill_payment: 'receipt',
-}
 
 const CREDIT_TYPES: TransactionType[] = ['deposit', 'transfer_in', 'conversion']
 
+export const isCredit = (tx: Transaction) => CREDIT_TYPES.includes(tx.type)
+
 export interface TransactionRowProps {
   transaction: Transaction
+  /** Shown under the amount on wide screens, e.g. the time. */
+  meta?: ReactNode
   onSelect?: (transaction: Transaction) => void
 }
 
-export function TransactionRow({ transaction: tx, onSelect }: TransactionRowProps) {
-  const isCredit = CREDIT_TYPES.includes(tx.type)
+export function TransactionRow({ transaction: tx, meta, onSelect }: TransactionRowProps) {
+  const credit = isCredit(tx)
 
   return (
     <button type="button" className={styles.row} onClick={() => onSelect?.(tx)}>
-      <span className={styles.icon}>
-        <Icon name={TYPE_ICONS[tx.type]} size={18} />
-      </span>
+      <TransactionAvatar transaction={tx} className={styles.avatar} />
       <span className={styles.main}>
         <span className={styles.title}>{TRANSACTION_TYPE_LABELS[tx.type]}</span>
         <span className={styles.narration}>{tx.narration}</span>
       </span>
-      <StatusDot status={tx.status} />
+      <StatusBadge status={tx.status} className={styles.status} />
       <span className={styles.end}>
         <Money
           amount={tx.amount}
           currency={tx.currency}
-          sign={isCredit ? 'credit' : 'debit'}
-          className={isCredit ? styles.credit : styles.amount}
+          sign={credit ? 'credit' : 'debit'}
+          className={credit ? styles.credit : styles.amount}
         />
-        <span className={styles.meta}>
-          {formatDateTime(tx.createdAt)}
-          {tx.fee > 0 && ` · Fee ${formatMoney(tx.fee, tx.currency)}`}
-        </span>
+        {meta && <span className={styles.meta}>{meta}</span>}
       </span>
     </button>
   )
