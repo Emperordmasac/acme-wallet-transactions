@@ -18,15 +18,25 @@ export default function ConvertPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const [user, setUser] = useState<User>()
-  const [rate, setRate] = useState<Rate>()
+  const [loadedRate, setLoadedRate] = useState<Rate>()
 
   useEffect(() => {
     getMe().then((res) => setUser(res.data))
   }, [])
 
   useEffect(() => {
-    getRate(from, to).then((res) => setRate(res.data))
+    const controller = new AbortController()
+    getRate(from, to, { signal: controller.signal })
+      .then((res) => {
+        if (!controller.signal.aborted) setLoadedRate(res.data)
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) throw err
+      })
+    return () => controller.abort()
   }, [from, to])
+  // Never show or use the previous pair's rate while the new one loads.
+  const rate = loadedRate?.from === from && loadedRate.to === to ? loadedRate : undefined
 
   const value = parseMoney(amount, from) ?? 0
   const fee = Math.round(value * 0.015)

@@ -30,4 +30,22 @@ describe('ConvertPage', () => {
 
     expect(await screen.findByText('Insufficient funds')).toBeInTheDocument()
   })
+
+  it('ignores a slow rate response for a pair the user has moved away from', async () => {
+    let resolveUsd: (value: { data: Rate }) => void = () => {}
+    vi.mocked(getRate).mockImplementation((from, to) =>
+      from === 'USD'
+        ? new Promise((resolve) => (resolveUsd = resolve))
+        : Promise.resolve({ data: rate(from, to, 98.4) })
+    )
+    render(<ConvertPage />)
+
+    await userEvent.selectOptions(screen.getByLabelText('From'), 'GHS')
+    expect(await screen.findByText('1 GHS = 98.4 NGN')).toBeInTheDocument()
+
+    resolveUsd({ data: rate('USD', 'NGN', 1530.25) })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.getByText('1 GHS = 98.4 NGN')).toBeInTheDocument()
+    expect(vi.mocked(getRate).mock.calls[0][2]?.signal?.aborted).toBe(true)
+  })
 })
