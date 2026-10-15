@@ -1,0 +1,33 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import type { Rate, User } from '@/types/api'
+import { ApiError } from '@/lib/api/client'
+import { convert, getMe, getRate } from '@/lib/api/endpoints'
+import ConvertPage from './page'
+
+vi.mock('@/lib/api/endpoints', () => ({ convert: vi.fn(), getMe: vi.fn(), getRate: vi.fn() }))
+
+const user = { firstName: 'Amara', wallets: [{ currency: 'USD', balance: 1000 }] } as User
+const rate = (from: Rate['from'], to: Rate['to'], value: number): Rate => ({
+  from,
+  to,
+  rate: value,
+  updatedAt: '2026-10-08T12:00:00.000Z',
+})
+
+beforeEach(() => {
+  vi.mocked(getMe).mockResolvedValue({ data: user })
+  vi.mocked(getRate).mockImplementation(async (from, to) => ({ data: rate(from, to, 1530.25) }))
+})
+
+describe('ConvertPage', () => {
+  it('shows the API error message when a conversion is rejected', async () => {
+    vi.mocked(convert).mockRejectedValue(new ApiError(422, 'INSUFFICIENT_FUNDS', 'Insufficient funds'))
+    render(<ConvertPage />)
+
+    await userEvent.type(screen.getByLabelText('Amount'), '50')
+    await userEvent.click(screen.getByRole('button', { name: 'Convert' }))
+
+    expect(await screen.findByText('Insufficient funds')).toBeInTheDocument()
+  })
+})
