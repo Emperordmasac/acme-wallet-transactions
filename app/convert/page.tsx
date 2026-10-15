@@ -18,10 +18,20 @@ export default function ConvertPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const [user, setUser] = useState<User>()
+  const [userFailed, setUserFailed] = useState(false)
   const [loadedRate, setLoadedRate] = useState<Rate>()
+  const [rateAttempt, setRateAttempt] = useState(0)
+  const [failedRateKey, setFailedRateKey] = useState<string>()
+  const rateKey = `${from}:${to}:${rateAttempt}`
 
   useEffect(() => {
-    getMe().then((res) => setUser(res.data))
+    const controller = new AbortController()
+    getMe({ signal: controller.signal })
+      .then((res) => setUser(res.data))
+      .catch(() => {
+        if (!controller.signal.aborted) setUserFailed(true)
+      })
+    return () => controller.abort()
   }, [])
 
   useEffect(() => {
@@ -30,11 +40,11 @@ export default function ConvertPage() {
       .then((res) => {
         if (!controller.signal.aborted) setLoadedRate(res.data)
       })
-      .catch((err) => {
-        if (!controller.signal.aborted) throw err
+      .catch(() => {
+        if (!controller.signal.aborted) setFailedRateKey(rateKey)
       })
     return () => controller.abort()
-  }, [from, to])
+  }, [from, to, rateKey])
   // Never show or use the previous pair's rate while the new one loads.
   const rate = loadedRate?.from === from && loadedRate.to === to ? loadedRate : undefined
 
@@ -42,7 +52,7 @@ export default function ConvertPage() {
   const fee = Math.round(value * 0.015)
   const youGet = rate ? Math.floor(value * rate.rate) : 0
   const wallet = user?.wallets.find((w) => w.currency === from)
-  const canSubmit = value > 0 && from !== to && !submitting
+  const canSubmit = value > 0 && from !== to && Boolean(rate) && !submitting
 
   const handleConvert = async () => {
     if (!canSubmit) return
@@ -85,7 +95,7 @@ export default function ConvertPage() {
                   Balance: <Money amount={wallet.balance} currency={from} />
                 </>
               ) : (
-                'Balance: …'
+                `Balance: ${userFailed ? 'unavailable' : '…'}`
               )
             }
             fieldClassName={styles.amount}
@@ -103,7 +113,20 @@ export default function ConvertPage() {
         <dl className={styles.summary}>
           <div className={styles.summaryRow}>
             <dt>Rate</dt>
-            <dd>{rate ? `1 ${from} = ${rate.rate} ${to}` : '…'}</dd>
+            <dd>
+              {rate ? (
+                `1 ${from} = ${rate.rate} ${to}`
+              ) : failedRateKey === rateKey ? (
+                <span role="alert" className={styles.rateError}>
+                  Couldn&apos;t load the rate.{' '}
+                  <Button variant="ghost" size="sm" onClick={() => setRateAttempt((n) => n + 1)}>
+                    Retry
+                  </Button>
+                </span>
+              ) : (
+                '…'
+              )}
+            </dd>
           </div>
           <div className={styles.summaryRow}>
             <dt>Fee (1.5%)</dt>

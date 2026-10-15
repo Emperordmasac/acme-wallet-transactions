@@ -63,3 +63,10 @@
 .success {
   border-left: 4px solid var(--color-success);
 }
+
+.rateError {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-danger);
+}

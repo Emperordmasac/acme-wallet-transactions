@@ -48,4 +48,17 @@ describe('ConvertPage', () => {
     expect(screen.getByText('1 GHS = 98.4 NGN')).toBeInTheDocument()
     expect(vi.mocked(getRate).mock.calls[0][2]?.signal?.aborted).toBe(true)
   })
+
+  it('shows when the balance or rate fail to load, and can retry the rate', async () => {
+    vi.mocked(getMe).mockRejectedValue(new ApiError(500, 'INTERNAL_ERROR', 'boom'))
+    vi.mocked(getRate)
+      .mockRejectedValueOnce(new ApiError(500, 'INTERNAL_ERROR', 'boom'))
+      .mockResolvedValue({ data: rate('USD', 'NGN', 1530.25) })
+    render(<ConvertPage />)
+
+    expect(await screen.findByText('Balance: unavailable')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't load the rate.")
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(await screen.findByText('1 USD = 1530.25 NGN')).toBeInTheDocument()
+  })
 })
