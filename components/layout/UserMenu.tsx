@@ -16,7 +16,12 @@ export function UserMenu() {
   const [user, setUser] = useState<User>()
 
   useEffect(() => {
-    getMe().then((res) => setUser(res.data))
+    const controller = new AbortController()
+    // On failure the menu still renders, just without the user's details.
+    getMe({ signal: controller.signal })
+      .then((res) => setUser(res.data))
+      .catch(() => {})
+    return () => controller.abort()
   }, [])
 
   return (

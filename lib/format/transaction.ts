@@ -15,3 +15,13 @@ export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
   pending: 'Pending',
   failed: 'Failed',
 }
+
+/** "Okonkwo-Adeyemi Logistics" -> "OA", "Kwame Mensah" -> "KM". */
+export function initials(name: string): string {
+  return name
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join('')
+}

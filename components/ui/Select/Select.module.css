@@ -27,3 +27,52 @@
   color: var(--color-text-subtle);
   pointer-events: none;
 }
+
+/* Chromium's customizable select draws the open menu from the design; other browsers keep the native one. */
+@supports (appearance: base-select) {
+  .select,
+  .select::picker(select) {
+    appearance: base-select;
+  }
+
+  .select {
+    display: flex;
+    align-items: center;
+  }
+
+  .select::picker-icon {
+    display: none;
+  }
+
+  .select::picker(select) {
+    min-width: anchor-size(width);
+    margin-top: var(--space-1);
+    padding: var(--space-1) 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-overlay);
+  }
+
+  .select option {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-md);
+    color: var(--color-text);
+  }
+
+  .select option::checkmark {
+    display: none;
+  }
+
+  .select option:hover,
+  .select option:focus-visible {
+    background: var(--color-bg-subtle);
+    outline: none;
+  }
+
+  .select option:checked {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+  }
+}
